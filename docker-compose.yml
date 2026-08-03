@@ -1,0 +1,10 @@
+services:
+  scraper:
+    build: .
+    container_name: youtube_scraper
+    env_file: .env
+    volumes:
+      - ./data:/app/data       # dados coletados (canais, vídeos, comentários)
+      - ./logs:/app/logs       # arquivos de log diários
+      - ./targets:/app/targets # listas de canais e vídeos alvo
+    restart: unless-stopped
