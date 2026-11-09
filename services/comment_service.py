@@ -1,6 +1,12 @@
 from utils import console
 from utils.text import normalize_comment_text
-from youtube_client import is_quota_error
+from youtube_client import execute_with_key_fallback, is_quota_error
+
+
+def _execute(youtube, request_factory, client_pool=None):
+    if client_pool is not None:
+        return execute_with_key_fallback(client_pool, request_factory)
+    return request_factory(youtube).execute()
 
 
 def build_comment_payload(comment: dict, video_id: str, parent_id=None, is_reply=False):
@@ -21,20 +27,24 @@ def build_comment_payload(comment: dict, video_id: str, parent_id=None, is_reply
     }
 
 
-def _fetch_all_replies(youtube, thread_id: str, video_id: str):
+def _fetch_all_replies(youtube, thread_id: str, video_id: str, client_pool=None):
     """Busca todas as respostas de um thread via paginação."""
     replies = []
     next_page_token = None
 
     while True:
         try:
-            response = youtube.comments().list(
-                part="snippet",
-                parentId=thread_id,
-                maxResults=100,
-                textFormat="plainText",
-                pageToken=next_page_token
-            ).execute()
+            response = _execute(
+                youtube,
+                lambda client: client.comments().list(
+                    part="snippet",
+                    parentId=thread_id,
+                    maxResults=100,
+                    textFormat="plainText",
+                    pageToken=next_page_token,
+                ),
+                client_pool,
+            )
 
         except Exception as e:
             if is_quota_error(e):
@@ -56,19 +66,23 @@ def _fetch_all_replies(youtube, thread_id: str, video_id: str):
     return replies
 
 
-def get_video_comments(youtube, video_id: str):
+def get_video_comments(youtube, video_id: str, client_pool=None):
     comments = []
     next_page_token = None
 
     while True:
         try:
-            response = youtube.commentThreads().list(
-                part="snippet,replies",
-                videoId=video_id,
-                maxResults=100,
-                textFormat="plainText",
-                pageToken=next_page_token
-            ).execute()
+            response = _execute(
+                youtube,
+                lambda client: client.commentThreads().list(
+                    part="snippet,replies",
+                    videoId=video_id,
+                    maxResults=100,
+                    textFormat="plainText",
+                    pageToken=next_page_token,
+                ),
+                client_pool,
+            )
 
         except Exception as e:
             if is_quota_error(e):
@@ -97,7 +111,14 @@ def get_video_comments(youtube, video_id: str):
 
             if total_replies > len(bundled_replies):
                 # A API retorna no máximo 5 respostas bundled; busca todas via paginação
-                comments.extend(_fetch_all_replies(youtube, thread_id, video_id))
+                comments.extend(
+                    _fetch_all_replies(
+                        youtube,
+                        thread_id,
+                        video_id,
+                        client_pool=client_pool,
+                    )
+                )
             else:
                 for reply in bundled_replies:
                     comments.append(

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+import time
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -33,6 +34,32 @@ def seconds_until_youtube_quota_reset():
     )
 
     return max(60, int((reset_time - now).total_seconds()))
+
+
+def execute_with_key_fallback(client_pool, request_factory):
+    """Executa uma chamada e repete a mesma página ao trocar de API key."""
+    while True:
+        youtube = client_pool.get_client()
+        try:
+            return request_factory(youtube).execute()
+        except Exception as error:
+            if not is_quota_error(error):
+                raise
+
+            if client_pool.rotate_key():
+                console.warn(
+                    "Limite da API atingido. Repetindo a mesma requisição "
+                    "com a próxima key."
+                )
+                continue
+
+            seconds = seconds_until_youtube_quota_reset()
+            console.warn(
+                "Todas as API keys atingiram o limite. "
+                f"Aguardando {seconds} segundos até o reset da quota."
+            )
+            time.sleep(seconds)
+            client_pool.reset_keys()
 
 
 class YouTubeClientPool:

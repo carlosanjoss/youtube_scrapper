@@ -10,8 +10,7 @@ from pipeline.processor import process_video_with_key_fallback, sleep_until_quot
 
 def run_once(client_pool) -> RunStats:
     stats = RunStats()
-    youtube = client_pool.get_client()
-    video_ids = collect_target_video_ids(youtube, stats)
+    video_ids = collect_target_video_ids(client_pool, stats)
 
     console.section("Processando vídeos")
 

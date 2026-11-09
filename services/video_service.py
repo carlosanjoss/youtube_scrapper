@@ -1,14 +1,19 @@
 from utils import console
 from utils.text import to_int
-from youtube_client import is_quota_error
+from youtube_client import execute_with_key_fallback, is_quota_error
 
 
-def get_video_info(youtube, video_id: str) -> dict | None:
+def get_video_info(youtube, video_id: str, client_pool=None) -> dict | None:
     try:
-        response = youtube.videos().list(
+        request_factory = lambda client: client.videos().list(
             part="snippet,statistics",
-            id=video_id
-        ).execute()
+            id=video_id,
+        )
+        response = (
+            execute_with_key_fallback(client_pool, request_factory)
+            if client_pool is not None
+            else request_factory(youtube).execute()
+        )
 
         items = response.get("items", [])
 

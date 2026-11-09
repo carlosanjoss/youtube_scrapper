@@ -14,11 +14,11 @@ from repositories.state_repository import (
 from youtube_client import is_quota_error, seconds_until_youtube_quota_reset
 
 
-def process_video(youtube, video_id: str) -> dict:
+def process_video(youtube, video_id: str, client_pool=None) -> dict:
     if is_video_processed(video_id):
         return {"success": True, "skipped": True, "comments_count": 0}
 
-    video_info = get_video_info(youtube, video_id)
+    video_info = get_video_info(youtube, video_id, client_pool=client_pool)
 
     if not video_info:
         mark_video_failed(video_id)
@@ -29,7 +29,7 @@ def process_video(youtube, video_id: str) -> dict:
     ensure_channel_stub(channel_id, video_info["channel_title"])
     save_video(video_info)
 
-    comments = get_video_comments(youtube, video_id)
+    comments = get_video_comments(youtube, video_id, client_pool=client_pool)
     save_comments(comments, channel_id, video_id)
 
     mark_video_processed(video_id)
@@ -52,7 +52,7 @@ def process_video_with_key_fallback(client_pool, video_id: str) -> dict:
         youtube = client_pool.get_client()
 
         try:
-            return process_video(youtube, video_id)
+            return process_video(youtube, video_id, client_pool=client_pool)
 
         except Exception as e:
             if not is_quota_error(e):

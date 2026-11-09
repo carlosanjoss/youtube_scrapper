@@ -90,14 +90,17 @@ https://youtu.be/nvxmqytHm_4
 
 ### `targets/channels.txt`
 
-Um **Channel ID** por linha (não o @ nem o nome — o ID que começa com `UC`):
+Um Channel ID (`UC...`), `@handle` ou URL de canal por linha:
 
 ```
 UC5rO0aTewMfpk2UKKPTLBYw
 UCBSMDyh_5qG8grvVu-VIEuw
+@CorujaDoCarvalho2
+https://www.youtube.com/@Posturadehomem
 ```
 
-> **Como achar o Channel ID:** abra o canal no YouTube → clique em "Sobre" → "Compartilhar canal" → "Copiar ID do canal". Ou use a URL: `youtube.com/channel/UC...` — o ID é o trecho `UC...`.
+Handles e URLs com `@handle` são resolvidos pela API. URLs no formato
+`youtube.com/channel/UC...` também são aceitas.
 
 Quando um canal é adicionado, o scraper coleta **todos os vídeos** publicados nele, não só os mais recentes.
 
@@ -204,10 +207,15 @@ A YouTube Data API tem limite de **10.000 unidades por dia por projeto**. O scra
 ```
 Quota esgotada na key atual
   └── Tem outra key disponível?
-        Sim → alterna para a próxima e continua
+        Sim → alterna para a próxima e repete somente a requisição/página atual
         Não → aguarda até meia-noite (horário do Pacífico, quando a Google reseta)
                depois reinicia com todas as keys disponíveis
 ```
+
+A paginação mantém o `pageToken` ao trocar de chave. Assim, a listagem de um
+canal ou de comentários não volta à primeira página quando uma quota termina no
+meio da operação. No Windows, `tzdata` é instalado pelo `requirements.txt` para
+calcular corretamente o horário de reset.
 
 Para configurar múltiplas keys, separe por vírgula no `.env`:
 ```

@@ -67,22 +67,22 @@ def info(label: str, value):
 
 
 def ok(text: str):
-    _out.print(f"  [green]✓[/green] {text}")
+    _out.print(f"  [green][OK][/green] {text}")
     _logger.info(text)
 
 
 def skip(text: str):
-    _out.print(f"  [yellow]↷[/yellow] {text}")
+    _out.print(f"  [yellow][SKIP][/yellow] {text}")
     _logger.info("[SKIP] %s", text)
 
 
 def warn(text: str):
-    _out.print(f"  [yellow]⚠[/yellow]  {text}")
+    _out.print(f"  [yellow][!][/yellow] {text}")
     _logger.warning(text)
 
 
 def fail(text: str):
-    _out.print(f"  [red]✗[/red] {text}")
+    _out.print(f"  [red][X][/red] {text}")
     _logger.error(text)
 
 
@@ -99,10 +99,10 @@ def make_progress() -> Progress:
         MofNCompleteColumn(),
         TimeElapsedColumn(),
         TimeRemainingColumn(),
-        TextColumn("[green]✓ {task.fields[ok]}"),
-        TextColumn("[yellow]↷ {task.fields[skipped]}"),
-        TextColumn("[red]✗ {task.fields[failed]}"),
-        TextColumn("[magenta]💬 {task.fields[comments]}"),
+        TextColumn("[green]OK {task.fields[ok]}"),
+        TextColumn("[yellow]SKIP {task.fields[skipped]}"),
+        TextColumn("[red]ERR {task.fields[failed]}"),
+        TextColumn("[magenta]COMMENTS {task.fields[comments]}"),
         console=_out,
         transient=False,
     )
